@@ -4,12 +4,12 @@ import Aluno from '../pages/Aluno'
 // import Contador from '../pages/Contador'
 // import Cozinheiro from '../pages/Cozinheiro'
 import Login from '../pages/Login'
-
+import Redirect from '../pages/Redirect'
 
 export default function AppRoutes() {
     return (
         <Routes>
-            <Route path='/' element={<redirect/>}/>
+            <Route path='/' element={<Redirect/>}/>
             <Route path='/Aluno' element={<Aluno/>}/>
             {/* <Route path='/Contador' element={<Contador/>}/> */}
             {/* <Route path='/Cozinheiro' element={<Cozinheiro/>}/> */}

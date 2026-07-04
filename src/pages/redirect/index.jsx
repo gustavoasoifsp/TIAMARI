@@ -1,7 +1,7 @@
-import { redirect } from "react-router";
+import { Navigate } from "react-router";
 
 export default function redirect() {
     return (
-        redirect("/Login")
+        <Navigate to="/Login" />
     )
 }
