@@ -1,0 +1,362 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+datasource db {
+  provider = "mysql"
+}
+// ENUMS
+enum Unidade {
+  kg
+  g
+  L
+  mL
+  pacote
+  unidade
+}
+
+enum CategoriaPrato {
+  Prato_Principal
+  Acompanhamento
+  Salada
+  Bebida
+  Sobremesa
+}
+
+enum TipoRefeicao {
+  CAFÉ
+  ALMOÇO
+  LANCHE
+  JANTAR
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  DESCARTE
+}
+
+enum MotivoDescarte {
+  VENCIDO
+  DANIFICADO
+  CONTAMINADO
+  OUTRO
+}
+
+// TABELAS PRINCIPAIS
+model Escola {
+  id_escola  Int    @id @default(autoincrement())
+  nome       String @db.VarChar(150)
+  endereco   String? @db.VarChar(255)
+  telefone   String? @db.VarChar(20)
+
+  administradores Administrador[]
+  contadores      Contador[]
+  cozinheiros      Cozinheiro[]
+  turmas           Turma[]
+  alunos           Aluno[]
+  estoque          Estoque[]
+  pratos           Prato[]
+  cardapios        Cardapio[]
+  desperdicios     DesperdicioRefeicao[]
+  movimentacoes    MovimentacaoEstoque[]
+  entradas         EntradaEstoque[]
+  descartes        DescarteEstoque[]
+}
+
+model Administrador {
+  id_adm   Int    @id @default(autoincrement())
+  cg       String @unique @db.VarChar(20)
+  nome     String @db.VarChar(100)
+  senha    String @db.VarChar(255)
+
+  id_escola Int
+  escola    Escola @relation(fields: [id_escola], references: [id_escola])
+}
+
+model Contador {
+  id_contador Int    @id @default(autoincrement())
+  cg          String @unique @db.VarChar(20)
+  nome        String @db.VarChar(100)
+  senha       String @db.VarChar(255)
+
+  id_escola Int
+  escola    Escola @relation(fields: [id_escola], references: [id_escola])
+}
+
+model Cozinheiro {
+  id_cozinheiro Int    @id @default(autoincrement())
+  cg            String @unique @db.VarChar(20)
+  nome          String @db.VarChar(100)
+  senha         String @db.VarChar(255)
+
+  id_escola Int
+  escola    Escola @relation(fields: [id_escola], references: [id_escola])
+}
+
+model Turma {
+  id_turma Int    @id @default(autoincrement())
+  nome     String @db.VarChar(50)
+
+  id_escola Int
+  escola    Escola @relation(fields: [id_escola], references: [id_escola])
+
+  alunos    Aluno[]
+  cardapios CardapioTurma[]
+
+  horarios_refeicao HorarioRefeicaoTurma[]
+}
+
+model HorarioRefeicaoTurma {
+  id_horario_refeicao Int @id @default(autoincrement())
+
+  id_cardapio_horario Int
+  id_turma Int
+
+  quantidade_pessoas Int
+
+  horario CardapioHorario @relation(fields: [id_cardapio_horario], references: [id_cardapio_horario])
+
+  turma Turma @relation(fields: [id_turma], references: [id_turma])
+
+  refeicoes_especiais RefeicaoEspecialHorario[]
+}
+
+model RefeicaoEspecialHorario {
+  id_refeicao_especial Int @id @default(autoincrement())
+
+  id_horario_refeicao Int
+
+  categoria String @db.VarChar(100)
+  quantidade Int
+
+  horario_refeicao HorarioRefeicaoTurma @relation(fields: [id_horario_refeicao], references: [id_horario_refeicao])
+}
+
+model Aluno {
+  id_aluno Int    @id @default(autoincrement())
+  cg       String @unique @db.VarChar(20)
+  nome     String @db.VarChar(100)
+  senha    String @db.VarChar(255)
+
+  id_turma  Int
+  id_escola Int
+
+  turma  Turma  @relation(fields: [id_turma], references: [id_turma])
+  escola Escola @relation(fields: [id_escola], references: [id_escola])
+
+  restricoes AlunoRestricao[]
+  votos      VotoRefeicao[]
+}
+
+model Restricao {
+  id_restricao Int    @id @default(autoincrement())
+  nome         String @unique @db.VarChar(80)
+
+  alunos  AlunoRestricao[]
+  pratos  PratoRestricao[]
+}
+
+// TABELAS DE RELAÇÃO
+model AlunoRestricao {
+  id_aluno     Int
+  id_restricao Int
+
+  aluno     Aluno     @relation(fields: [id_aluno], references: [id_aluno])
+  restricao Restricao @relation(fields: [id_restricao], references: [id_restricao])
+
+  @@id([id_aluno, id_restricao])
+}
+
+model PratoIngrediente {
+  id_prato   Int
+  id_estoque Int
+
+  quantidade Decimal @db.Decimal(10,2)
+  unidade    Unidade
+
+  prato   Prato   @relation(fields: [id_prato], references: [id_prato])
+  estoque Estoque @relation(fields: [id_estoque], references: [id_estoque])
+
+  @@id([id_prato, id_estoque])
+}
+
+model PratoRestricao {
+  id_prato     Int
+  id_restricao Int
+
+  prato     Prato     @relation(fields: [id_prato], references: [id_prato])
+  restricao Restricao @relation(fields: [id_restricao], references: [id_restricao])
+
+  @@id([id_prato, id_restricao])
+}
+
+// ESTOQUE / PRATOS
+model Estoque {
+  id_estoque   Int    @id @default(autoincrement())
+  nome         String @db.VarChar(100)
+  quantidade   Decimal @db.Decimal(10,2)
+  unidade      Unidade
+  data_chegada DateTime?
+  data_validade DateTime?
+
+  id_escola Int
+  escola    Escola @relation(fields: [id_escola], references: [id_escola])
+
+  pratos        PratoIngrediente[]
+  movimentacoes MovimentacaoEstoque[]
+  entradas      EntradaEstoque[]
+  descartes     DescarteEstoque[]
+}
+
+model Prato {
+  id_prato  Int    @id @default(autoincrement())
+  nome      String @db.VarChar(100)
+  categoria CategoriaPrato
+
+  id_escola Int
+  escola    Escola @relation(fields: [id_escola], references: [id_escola])
+
+  ingredientes PratoIngrediente[]
+  restricoes   PratoRestricao[]
+  cardapios    CardapioTurma[]
+}
+
+// CARDÁPIO
+model Cardapio {
+  id_cardapio   Int    @id @default(autoincrement())
+  data_refeicao DateTime
+  tipo_refeicao TipoRefeicao
+
+  id_escola Int
+  escola    Escola @relation(fields: [id_escola], references: [id_escola])
+
+  turmas CardapioTurma[]
+  votos  VotoRefeicao[]
+  cardapio_horario CardapioHorario[]
+  desperdicios DesperdicioRefeicao[]
+}
+
+model CardapioTurma {
+  id_cardapio_turma Int @id @default(autoincrement())
+
+  id_cardapio Int
+  id_turma    Int
+  id_prato    Int
+
+  cardapio Cardapio @relation(fields: [id_cardapio], references: [id_cardapio])
+  turma    Turma    @relation(fields: [id_turma], references: [id_turma])
+  prato    Prato    @relation(fields: [id_prato], references: [id_prato])
+}
+
+model CardapioHorario {
+  id_cardapio_horario Int @id @default(autoincrement())
+
+  id_cardapio Int
+  horario String @db.VarChar(5)
+
+  cardapio Cardapio @relation(fields: [id_cardapio], references: [id_cardapio])
+
+  turmas HorarioRefeicaoTurma[]
+}
+
+// VOTOS
+model VotoRefeicao {
+  id_voto       Int @id @default(autoincrement())
+  id_aluno      Int
+  id_cardapio   Int
+  vai_comer     Boolean
+  data_resposta DateTime?
+
+  aluno    Aluno    @relation(fields: [id_aluno], references: [id_aluno])
+  cardapio Cardapio @relation(fields: [id_cardapio], references: [id_cardapio])
+}
+
+// DESPERDÍCIO / MOVIMENTAÇÃO
+model DesperdicioRefeicao {
+  id_desperdicio      Int @id @default(autoincrement())
+  id_cardapio         Int
+  id_escola           Int
+  peso_preparado_kg   Decimal? @db.Decimal(10,2)
+  peso_descartado_kg  Decimal  @db.Decimal(10,2)
+  data_registro       DateTime @default(now())
+
+  escola   Escola   @relation(fields: [id_escola], references: [id_escola])
+  cardapio Cardapio @relation(fields: [id_cardapio], references: [id_cardapio])
+}
+
+model MovimentacaoEstoque {
+  id_movimentacao Int @id @default(autoincrement())
+  id_estoque      Int
+  id_escola       Int
+
+  tipo            TipoMovimentacao
+  quantidade      Decimal @db.Decimal(10,2)
+  unidade         Unidade
+  motivo          String? @db.VarChar(100)
+  data_movimentacao DateTime @default(now())
+
+  estoque Estoque @relation(fields: [id_estoque], references: [id_estoque])
+  escola  Escola  @relation(fields: [id_escola], references: [id_escola])
+}
+
+model Fornecedor {
+  id_fornecedor Int @id @default(autoincrement())
+  nome          String @db.VarChar(150)
+  cnpj          String? @unique @db.VarChar(20)
+  telefone      String? @db.VarChar(20)
+  endereco      String? @db.VarChar(255)
+
+  entradas EntradaEstoque[]
+}
+
+model EntradaEstoque {
+  id_entrada Int @id @default(autoincrement())
+
+  id_estoque   Int
+  id_fornecedor Int
+  id_escola    Int
+
+  quantidade Decimal @db.Decimal(10,2)
+  unidade    Unidade
+  valor_total Decimal? @db.Decimal(10,2)
+  data_compra DateTime @default(now())
+
+  estoque    Estoque    @relation(fields: [id_estoque], references: [id_estoque])
+  fornecedor Fornecedor @relation(fields: [id_fornecedor], references: [id_fornecedor])
+  escola     Escola     @relation(fields: [id_escola], references: [id_escola])
+}
+
+model DescarteEstoque {
+  id_descarte Int @id @default(autoincrement())
+
+  id_estoque Int
+  id_escola  Int
+
+  quantidade Decimal @db.Decimal(10,2)
+  unidade    Unidade
+  motivo     MotivoDescarte
+  data_descarte DateTime @default(now())
+
+  estoque Estoque @relation(fields: [id_estoque], references: [id_estoque])
+  escola  Escola  @relation(fields: [id_escola], references: [id_escola])
+}
+
+// VIEW (não suportada diretamente como model padrão)
+model VwControleGeralAdmin {
+  id_escola Int
+  nome_escola String
+
+  total_alunos Int
+  total_refeicoes_planejadas Int
+  total_refeicoes_servidas Int
+  total_refeicoes_consumidas Int
+  taxa_adesao_percentual Float
+
+  peso_total_preparado_kg Decimal @db.Decimal(10,2)
+  peso_total_servido_kg Decimal @db.Decimal(10,2)
+  peso_total_desperdicio_kg Decimal @db.Decimal(10,2)
+  percentual_desperdicio Float
+
+  @@ignore
+  @@map("vw_controle_geral_admin")
+}

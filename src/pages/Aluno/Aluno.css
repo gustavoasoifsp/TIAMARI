@@ -1,0 +1,11 @@
+.container-root-aluno {
+    background-color: whitesmoke;
+    border: 2px var(--primary-color);
+}
+header {
+    margin: 20px;
+    border-bottom: 2px var(--primary-color);
+    display: flex;
+    justify-content: space-around;
+    
+}
